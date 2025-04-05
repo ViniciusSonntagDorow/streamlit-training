@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
-from dotenv import load_dotenv
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
+from dotenv import load_dotenv
 
 # Carregar variáveis de ambiente
 load_dotenv()
 
+# Construir a URL do banco de dados
 DB_HOST = os.getenv("DB_HOST")
 DB_DATABASE = os.getenv("DB_DATABASE")
 DB_USER = os.getenv("DB_USER")
@@ -23,9 +24,9 @@ class SurveyData(Base):
     __tablename__ = "survey_data"
     id = Column(Integer, primary_key=True, autoincrement=True)
     estado = Column(String(50))
-    area_atuacao = Column(String(50))
     bibliotecas = Column(Text)
-    horas_estudo = Column(String(50))
+    area_atuacao = Column(String(50))
+    horas_estudo = Column(String(20))
     conforto_dados = Column(String(50))
     experiencia_python = Column(Integer)
     experiencia_sql = Column(Integer)
@@ -49,12 +50,13 @@ def criar_tabela_se_nao_existir(engine):
         st.error(f"Erro ao criar a tabela: {e}")
 
 
+# Função para salvar dados no banco de dados
 def salvar_dados_banco(session, dados):
     try:
         novo_dado = SurveyData(
             estado=dados["Estado"],
-            area_atuacao=dados["Área de Atuação"],
             bibliotecas=dados["Bibliotecas e ferramentas"],
+            area_atuacao=dados["Área de Atuação"],
             horas_estudo=dados["Horas de Estudo"],
             conforto_dados=dados["Conforto com Dados"],
             experiencia_python=dados["Experiência de Python"],
@@ -136,7 +138,6 @@ horas_codando = ["Menos de 5", "5-10", "10-20", "Mais de 20"]
 
 conforto_dados = ["Desconfortável", "Neutro", "Confortável", "Muito Confortável"]
 
-
 # Criação do formulário
 with st.form("dados_enquete"):
     estado = st.selectbox("Estado", estados)
@@ -155,18 +156,19 @@ with st.form("dados_enquete"):
     # Botão para submeter o formulário
     submit_button = st.form_submit_button("Enviar")
 
-    if submit_button:
-        novo_dado = {
-            "Estado": estado,
-            "Bibliotecas e ferramentas": ", ".join(bibliotecas_selecionadas),
-            "Área de Atuação": area_atuacao,
-            "Horas de Estudo": horas_codando,
-            "Conforto com Dados": conforto_dados,
-            "Experiência de Python": experiencia_python,
-            "Experiência de SQL": experiencia_sql,
-            "Experiência de Cloud": experiencia_cloud,
-        }
-        session = Session()
-        salvar_dados_banco(session, novo_dado)
-        st.balloons()
-        st.success("Dados enviados com sucesso!")
+# Se o botão foi clicado, salvar os dados no banco de dados
+if submit_button:
+    novo_dado = {
+        "Estado": estado,
+        "Bibliotecas e ferramentas": ", ".join(bibliotecas_selecionadas),
+        "Área de Atuação": area_atuacao,
+        "Horas de Estudo": horas_codando,
+        "Conforto com Dados": conforto_dados,
+        "Experiência de Python": experiencia_python,
+        "Experiência de SQL": experiencia_sql,
+        "Experiência de Cloud": experiencia_cloud,
+    }
+    session = Session()
+    salvar_dados_banco(session, novo_dado)
+    st.success("Dados enviados com sucesso!")
+    st.balloons()
